@@ -12,11 +12,12 @@ public class DrillManager : MonoBehaviour
     public int CurrentMove { get; private set; }
     public float Progress { get; private set; }
     public bool IsRunning { get; private set; }
+    public bool MenuOpen { get; set; }
 
     public event Action<int> MoveCompleted;
     public event Action DrillFinished;
     public event Action DrillReset;
-
+    
     float elapsed;
     int completedMoves;
 
@@ -27,6 +28,9 @@ public class DrillManager : MonoBehaviour
 
     void Update()
     {
+        if (MenuOpen)
+            return;
+
         Keyboard keyboard = Keyboard.current;
 
         if (keyboard != null && keyboard.rKey.wasPressedThisFrame)
@@ -39,8 +43,7 @@ public class DrillManager : MonoBehaviour
             keyboard.enterKey.wasPressedThisFrame &&
             !IsRunning)
         {
-            ResetDrill();
-            IsRunning = true;
+            BeginDrill();
         }
 
         if (!IsRunning)
@@ -99,5 +102,14 @@ public class DrillManager : MonoBehaviour
     {
         bpm = Mathf.Max(1f, bpm);
         countsPerMove = Mathf.Max(1, countsPerMove);
+    }
+
+    public void BeginDrill()
+    {
+        if (IsRunning || MenuOpen)
+            return;
+
+        ResetDrill();
+        IsRunning = true;
     }
 }
