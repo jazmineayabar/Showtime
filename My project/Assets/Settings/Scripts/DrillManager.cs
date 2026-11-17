@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -12,7 +13,12 @@ public class DrillManager : MonoBehaviour
     public float Progress { get; private set; }
     public bool IsRunning { get; private set; }
 
+    public event Action<int> MoveCompleted;
+    public event Action DrillFinished;
+    public event Action DrillReset;
+
     float elapsed;
+    int completedMoves;
 
     void Start()
     {
@@ -43,7 +49,15 @@ public class DrillManager : MonoBehaviour
         float moveDuration = countsPerMove * 60f / bpm;
         elapsed += Time.deltaTime;
 
-        bool finished = elapsed >= moveDuration * 3f;
+        // Announce each move that has just ended.
+        while (completedMoves < 3 &&
+               elapsed >= (completedMoves + 1) * moveDuration)
+        {
+            MoveCompleted?.Invoke(completedMoves);
+            completedMoves++;
+        }
+
+        bool finished = completedMoves == 3;
 
         CurrentMove = Mathf.Min(
             Mathf.FloorToInt(elapsed / moveDuration), 2
@@ -59,12 +73,16 @@ public class DrillManager : MonoBehaviour
         }
 
         if (finished)
+        {
             IsRunning = false;
+            DrillFinished?.Invoke();
+        }
     }
 
     void ResetDrill()
     {
         elapsed = 0;
+        completedMoves = 0;
         CurrentMove = 0;
         Progress = 0;
         IsRunning = false;
@@ -73,5 +91,13 @@ public class DrillManager : MonoBehaviour
         {
             marcher.PlaceAtStart();
         }
+
+        DrillReset?.Invoke();
+    }
+
+    void OnValidate()
+    {
+        bpm = Mathf.Max(1f, bpm);
+        countsPerMove = Mathf.Max(1, countsPerMove);
     }
 }
