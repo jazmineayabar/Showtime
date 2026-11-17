@@ -30,6 +30,5 @@ public class MenuFlow : MonoBehaviour
         moveText.SetActive(true);
 
         drillManager.MenuOpen = false;
-        drillManager.BeginDrill();
     }
 }
