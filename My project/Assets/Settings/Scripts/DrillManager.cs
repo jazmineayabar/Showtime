@@ -6,8 +6,8 @@ public class DrillManager : MonoBehaviour
 {
     public DrillMarcher[] marchers;
 
-    public float bpm = 120f;
-    public int countsPerMove = 16;
+    public float bpm;
+    public int countsPerMove;
 
     public int CurrentMove { get; private set; }
     public float Progress { get; private set; }
@@ -20,6 +20,21 @@ public class DrillManager : MonoBehaviour
     
     float elapsed;
     int completedMoves;
+
+    public TMPro.TextMeshProUGUI countdownText;
+    public float countdownDuration = 3f;
+
+    bool isCountingDown;
+    float countdownTimer;
+
+    public AudioSource metronome;
+    public AudioClip metronomeClick;
+    public int countdownBeats = 3;
+
+    int beatsRemaining;
+    float beatDuration; 
+
+    float metronomeTimer;
 
     void Start()
     {
@@ -46,8 +61,50 @@ public class DrillManager : MonoBehaviour
             BeginDrill();
         }
 
+       if (isCountingDown)
+    {
+        countdownTimer -= Time.deltaTime;
+
+        if (countdownTimer <= 0)
+        {
+            countdownTimer += beatDuration;
+
+            beatsRemaining--;
+
+            countdownText.text = beatsRemaining.ToString();
+
+            if (metronome != null && metronomeClick != null)
+            {
+                metronome.PlayOneShot(metronomeClick);
+            }
+
+            if (beatsRemaining <= 0)
+            {
+                isCountingDown = false;
+                countdownText.text = "GO!";
+                IsRunning = true;
+                metronomeTimer = 0;
+            }
+        }
+
+        return;
+    }
         if (!IsRunning)
             return;
+
+        beatDuration = 60f / bpm;
+
+        metronomeTimer += Time.deltaTime;
+
+        while (metronomeTimer >= beatDuration)
+        {
+            metronomeTimer -= beatDuration;
+
+            if (metronome != null && metronomeClick != null)
+            {
+                metronome.PlayOneShot(metronomeClick);
+            }
+        }
 
         float moveDuration = countsPerMove * 60f / bpm;
         elapsed += Time.deltaTime;
@@ -89,6 +146,12 @@ public class DrillManager : MonoBehaviour
         CurrentMove = 0;
         Progress = 0;
         IsRunning = false;
+        isCountingDown = false;
+        countdownTimer = 0;
+        beatsRemaining = 0;
+
+        if (countdownText != null)
+            countdownText.text = "";
 
         foreach (DrillMarcher marcher in marchers)
         {
@@ -106,10 +169,14 @@ public class DrillManager : MonoBehaviour
 
     public void BeginDrill()
     {
-        if (IsRunning || MenuOpen)
+        if (IsRunning || isCountingDown || MenuOpen)
             return;
 
         ResetDrill();
-        IsRunning = true;
+
+        beatDuration = 60f / bpm;
+        countdownTimer = 0;
+        beatsRemaining = countdownBeats;
+        isCountingDown = true;
     }
 }
